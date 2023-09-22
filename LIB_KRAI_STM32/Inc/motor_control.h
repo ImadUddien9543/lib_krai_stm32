@@ -89,17 +89,16 @@ typedef struct __attribute__((__packed__)) esc_struct{
 	uint32_t channel;
 	float min_ccr, max_ccr;
 	float min_us, max_us;
-	int pwm;
 } esc;
 
 extern esc bldc_1, bldc_2;
 extern motor_channel LeftFront, LeftBack, RightFront, RightBack, X_penembak, Y_penembak, Chain_lift, Chain_lift2;
 
 void motor_init(motor_channel *wheel_n);
-void motor_drive(motor_channel *wheel_n, int_fast16_t rpm);
+void motor_drive(motor_channel *wheel_n, int_fast16_t *rpm);
 void bldc_init(esc *servo);
-void bldc_drive(esc *servo, uint32_t *duty);
-void bldc_duty(esc *servo, float percent);	//0.0  - 100.0
+void bldc_drive(esc *servo, uint_fast32_t *duty);
+void bldc_duty(esc *servo, float *percent);	//0.0  - 100.0
 void disable_motor(motor_channel *wheel_n);
 void enable_motor(motor_channel *wheel_n);
 
