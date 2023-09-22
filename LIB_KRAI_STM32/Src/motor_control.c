@@ -88,15 +88,15 @@ void bldc_init(esc *servo){
 	__HAL_TIM_SET_COMPARE(servo->htim, servo->channel, servo->min_ccr);
 }
 
-void bldc_drive(esc *servo, uint32_t *duty){
+void bldc_drive(esc *servo, uint_fast32_t *duty){
 	if(*duty >= servo->max_ccr) *duty = servo->max_ccr;
 	else if(*duty <= servo->min_ccr) *duty = servo->min_ccr;
 	else __NOP();
 	__HAL_TIM_SET_COMPARE(servo->htim, servo->channel, *duty);
 }
 
-void bldc_duty(esc *servo, float percent){
-	uint32_t u32_duty = (uint32_t)(lin_interp(percent, 0.0f, 100.0f, servo->min_ccr, servo->max_ccr));
+void bldc_duty(esc *servo, float *percent){
+	uint_fast32_t u32_duty = (uint_fast32_t)(lin_interp(*percent, 0.0f, 100.0f, servo->min_ccr, servo->max_ccr));
 	__HAL_TIM_SET_COMPARE(servo->htim, servo->channel, u32_duty);
 }
 
@@ -109,11 +109,11 @@ void motor_init(motor_channel *wheel_n){
 	__HAL_TIM_SET_COMPARE(wheel_n->in2_, wheel_n->ch2_, 0);
 }
 
-void motor_drive(motor_channel *wheel_n, int_fast16_t rpm){ //rpm = ccr val
-	int_fast16_t dir = rpm;
-	uint_fast32_t rpm_ = (uint_fast32_t)(abs(rpm));
+void motor_drive(motor_channel *wheel_n, int_fast16_t *rpm){ //rpm = ccr val
+	int_fast16_t dir = *rpm;
+	uint_fast32_t rpm_ = (uint_fast32_t)(abs(*rpm));
 	if(dir > 0){
-		__HAL_TIM_SET_COMPARE(wheel_n->in1_, wheel_n->ch1_, rpm);
+		__HAL_TIM_SET_COMPARE(wheel_n->in1_, wheel_n->ch1_, rpm_);
 		__HAL_TIM_SET_COMPARE(wheel_n->in2_, wheel_n->ch2_, 0);
 	}
 	else if(dir < 0){
