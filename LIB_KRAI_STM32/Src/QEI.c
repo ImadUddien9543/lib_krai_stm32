@@ -103,6 +103,16 @@ void read_servo_pulse(servo *s){
  * jika encoder lgsg di as/shaft mekanisme, gear_ratio ditulis 1
  *
  */
-float get_angle(servo *s){
+float get_deg(servo *s){
 	return (s->pulse_enc * 360.0f) / (s->gear_ratio * s->ppr * s->X);
+}
+
+void servo_deg_s(servo *s){
+	s->start_time = HAL_GetTick();
+	s->dt = s->start_time - s->prev_time;
+	if(s->dt >= s->sample_time){
+		s->prev_time = s->start_time;
+		s->deg_s =	(s->pulse_enc - s->pulse_enc_) * 360.0f * s->sample_time / (s->ppr * s->X * s->gear_ratio);
+		s->pulse_enc_ = s->pulse_enc;
+	}
 }
