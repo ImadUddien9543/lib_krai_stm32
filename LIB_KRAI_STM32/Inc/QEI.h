@@ -53,6 +53,20 @@
  *		if(GPIO_Pin == struct.pin_enc_1 || GPIO_Pin == struct.pin_enc_2) read_servo_pulse;
  *		else __NOP(); //satu saja dlm satu callback bersama
  *	}
+ *
+ *	==================================================================================
+ *
+ *
+ *	KALIBRASI / ESTIMASI TERLEBIH DAHULU SATU PUTARAN BERAPA PPR
+ *	MISAL :
+ *		ENCODING X4R : 	DUA INTERRUPT A & B RISING
+ *						SPEC ENCODER = 7 PPR
+ *						1 PUTARAN = 14 PPR, MAKA NILAI ENUM X2R = 2
+ *
+ *						KALO 1 PUTARAN = 7 PPR, MAKA NILAI ENUM X2R = 1
+ *
+ *						X2R = X2F
+ *						X4R = 2 X X2R
  * */
 
 #ifdef __cplusplus
@@ -65,20 +79,20 @@ typedef enum {
 	X4 = 4
 }ENCODING;
 
-typedef struct __attribute__((__packed__)) RPM_struct {
+typedef struct RPM_struct {
 	uint32_t start_time, prev_time, update_s, d_time, RPM_U;
-	double pulse_enc, pulse_dist, pulse_tim, pulse_enc_last;
-	double RPM, d_wheel, ppr, dist, gear_ratio;
+	float pulse_enc, pulse_dist, pulse_tim, pulse_enc_last;
+	float RPM, d_wheel, ppr, dist, gear_ratio;
 	GPIO_TypeDef *port_enc_1, *port_enc_2;
 	GPIO_InitTypeDef *port_mode;
 	uint16_t pin_enc_1, pin_enc_2;
 	ENCODING X;
 } RPM;
 
-typedef struct __attribute__((__packed__)) _servo_ {
-	uint32_t start_time, prev_time, sample_time;
-	int pulse_enc, pulse_rpm;
-	double RPM, ppr, gear_ratio;
+typedef struct _servo_ {
+	uint32_t start_time, prev_time, sample_time, dt;
+	int pulse_enc, pulse_enc_;
+	float deg_s, ppr, gear_ratio;
 	GPIO_TypeDef *port_enc_1, *port_enc_2;
 	GPIO_InitTypeDef *port_mode;
 	ENCODING X;
@@ -97,7 +111,8 @@ void enc_dist(RPM *rpm);
 
 void servo_encoding(servo *s, ENCODING X);
 void read_servo_pulse(servo *s);
-float get_angle(servo *s);
+void servo_deg_s(servo *s);
+float get_deg(servo *s);
 
 #ifdef __cplusplus
 }
