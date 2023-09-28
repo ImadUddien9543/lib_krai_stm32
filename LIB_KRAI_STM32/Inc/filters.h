@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 
-typedef struct __attribute__((__packed__)) Filter_ {
+typedef struct Filter_ {
     float out, prev_out, prev_in;
     float alpha, RC;
     float dt_, ts_;	//float dt dalam s
