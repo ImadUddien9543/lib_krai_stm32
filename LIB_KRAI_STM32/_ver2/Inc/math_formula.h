@@ -30,7 +30,7 @@ typedef enum{
 	ORD3 = 0x03U,
 }SSTEP_ORD;
 
-typedef struct __attribute__((__packed__)) _m_struct_ {
+typedef struct _m_struct_ {
 	//polynomial regression member
 	float c0, c1, c2, c3, c4;
 	float (*get_poly)(struct _m_struct_*, float);
