@@ -26,11 +26,11 @@ extern "C" {
 
 typedef float (*order)(float);
 
-typedef struct __attribute__((__packed__)) Poly_Regression {
+typedef struct Poly_Regression {
     float c4, c3, c2, c1, c0;
 } pr;
 
-typedef struct __attribute__((__packed__)) SmoothStep {
+typedef struct SmoothStep {
     float in, min, max;
 } SStep;
 
