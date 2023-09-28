@@ -27,7 +27,7 @@ untuk write pin:
 extern "C" {
 #endif
 
-typedef struct __attribute__((__packed__)) _GPIO_Struct_ {
+typedef struct _GPIO_Struct_ {
     GPIO_TypeDef *gpio_x;
     uint16_t pin_num;
     GPIO_PinState state;
