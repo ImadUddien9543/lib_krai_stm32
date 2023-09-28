@@ -18,27 +18,23 @@
 extern "C" {
 #endif
 
-typedef struct {
-	float xk, vk;
-} a_b_val;
 
-typedef struct __attribute__((__packed__)) Filter_ {
+typedef struct Filter_ {
     //low & high pass filter, double exponential smoothing
 	// 0 <= alpha <= 1
 	// 0 <= a <= 1, 		0 << b << 1
 	float out, prev_out, prev_in;
     float alpha;
     uint32_t start, last, dt, sample_time;
-    float(*get_val)(struct Filter_*, float);
+    void (*get_val)(struct Filter_*, float);
     float a, b;
     float st[2], bt[2];
     //alpha-beta
     float A, B, xk[2], vk[2], rk[2];
-    a_b_val result;
-    a_b_val (*get_alpha_beta)(struct Filter_*, float);
+    void (*get_alpha_beta)(struct Filter_*, float);
     //kalman
     float Q_angle, Q_bias, R_measure, angle, bias, P[2][2], P_[2][2], S, K[2];
-    float (*get_kalman)(struct Filter_*, float, float);
+    void (*get_kalman)(struct Filter_*, float, float);
 
 
 } filter;
