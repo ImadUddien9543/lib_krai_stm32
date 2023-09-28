@@ -75,7 +75,7 @@ extern "C" {
  *
  */
 
-typedef struct __attribute__((__packed__))motor_channel_struct {
+typedef struct motor_channel_struct {
 	TIM_HandleTypeDef* in1_;
 	TIM_HandleTypeDef* in2_;
 	uint32_t ch1_;
@@ -84,7 +84,7 @@ typedef struct __attribute__((__packed__))motor_channel_struct {
 	uint16_t en_pin;
 } motor_channel;
 
-typedef struct __attribute__((__packed__)) esc_struct{
+typedef struct esc_struct{
 	TIM_HandleTypeDef* htim;
 	uint32_t channel;
 	float min_ccr, max_ccr;
