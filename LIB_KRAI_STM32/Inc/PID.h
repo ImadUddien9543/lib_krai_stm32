@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-typedef struct __attribute__((__packed__))_PID_A_{
+typedef struct _PID_A_{
 	uint32_t start, ts, dt, last;
 	float error, d_input, d_output, prev_feedback, prev_error;
 	float alpha, lpf_new, lpf_last;
@@ -27,7 +27,7 @@ typedef struct __attribute__((__packed__))_PID_A_{
 	float out_min, out_max;
 } pid_a;
 
-typedef struct __attribute__((__packed__))_PID_B_{
+typedef struct _PID_B_{
 	uint32_t start, ts, dt, last;
 	float error[3], p_error[3], A[2], A_d[3], d[2], fd[2], pv[3];
 	float tau, alpha, N;
