@@ -31,7 +31,8 @@ m_struct m[6] = { //motor 1
  * pemanggilan:
  * di int main() atau misal rtos di fungsi task nya (BUKAN DI LOOP e.g. while(1) atau for(;;))
  *
- *		m_struct *obj = init();
+ *		m_struct *obj = init():
+ *  BARU DI LOOP NYA:
  *		motor_drive(&L_Back, obj->lb);
  * */
 
