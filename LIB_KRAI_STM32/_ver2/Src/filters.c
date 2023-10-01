@@ -7,11 +7,11 @@
 
 #include "filters.h"
 
-static float low_pass(filter *f, float input);
-static float hi_pass(filter *f, float input);
-static float double_exp_smoothing(filter *f, float input);
-static a_b_val alpha_beta_filter(filter *f, float input);
-static float kalman_get_angle(filter *f, float new_angle, float new_angle_rate);
+static void low_pass(filter *f, float input);
+static void hi_pass(filter *f, float input);
+static void double_exp_smoothing(filter *f, float input);
+static void alpha_beta_filter(filter *f, float input);
+static void kalman_get_angle(filter *f, float new_angle, float new_angle_rate);
 
 filter *low_pass_init(float alpha, uint32_t ts){
 	filter *obj;
@@ -79,7 +79,7 @@ filter *double_exp_init(float a, float b, uint32_t ts){
 	return (filter*)obj;
 }
 
-static float low_pass(filter *f, float input){
+static void low_pass(filter *f, float input){
 	f->start = HAL_GetTick();
 	f->dt = f->start - f->last; //second
 	if(f->dt >= f->sample_time){
@@ -87,10 +87,9 @@ static float low_pass(filter *f, float input){
 		f->prev_out = f->out;
 		f->last = f->start;
 	}
-	return f->out / 1.0f;
 }
 
-static float hi_pass(filter *f, float input){
+static void hi_pass(filter *f, float input){
 	f->start = HAL_GetTick();
 	f->dt = f->start - f->last; //second
 	if(f->dt >= f->sample_time){
@@ -99,10 +98,9 @@ static float hi_pass(filter *f, float input){
 		f->prev_in = input;
 		f->last = f->start;
 	}
-	return f->out / 1.0f;
 }
 
-static float double_exp_smoothing(filter *f, float input){
+static void double_exp_smoothing(filter *f, float input){
 	f->start = HAL_GetTick();
 	f->dt = f->start - f->last;
 	if(f->dt >= f->sample_time){
@@ -112,10 +110,9 @@ static float double_exp_smoothing(filter *f, float input){
 		f->bt[0] = f->bt[1];
 		f->last = f->start;
 	}
-	return f->st[1] / 1.0f;
 }
 
-static a_b_val alpha_beta_filter(filter *f, float input){
+static void alpha_beta_filter(filter *f, float input){
 	f->start = HAL_GetTick();
 	f->dt = f->start - f->last;
 	if(f->dt >= f->sample_time){
@@ -123,18 +120,15 @@ static a_b_val alpha_beta_filter(filter *f, float input){
 		f->rk[0] = input - f->xk[0];
 		f->xk[1] += (f->A * f->rk[0]);
 		f->vk[1] += (f->rk[1] - f->rk[0]) * f->B;
-		f->result.xk = f->xk[1];
-		f->result.vk = f->vk[1];
 
 		f->rk[0] = f->rk[1];
 		f->xk[0] = f->xk[1];
 		f->vk[0] = f->vk[1];
 		f->last = f->start;
 	}
-	return f->result;
 }
 
-static float kalman_get_angle(filter *f, float new_angle, float new_angle_rate){
+static void kalman_get_angle(filter *f, float new_angle, float new_angle_rate){
 	f->start = HAL_GetTick();
 	f->dt = f->start - f->last;
 	if(f->dt >= f->sample_time){
@@ -157,5 +151,4 @@ static float kalman_get_angle(filter *f, float new_angle, float new_angle_rate){
 		f->P_[1][0] -= f->K[1] * f->P[0][0];
 		f->P_[1][1] -= f->K[1] * f->P[1][0];
 	}
-	return f->angle;
 }
