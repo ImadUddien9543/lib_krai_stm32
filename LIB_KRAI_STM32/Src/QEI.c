@@ -7,90 +7,70 @@
 
 #include "QEI.h"
 
-void rpm_encoding(RPM *rpm, ENCODING X){
-	if(X == X2R)		rpm->port_mode->Mode = GPIO_MODE_IT_RISING;
-	else if(X == X2F)	rpm->port_mode->Mode = GPIO_MODE_IT_FALLING;
-	else if(X == X4)	rpm->port_mode->Mode = GPIO_MODE_IT_RISING_FALLING;
-	else __NOP();
-	HAL_GPIO_Init(rpm->port_enc_1, rpm->port_mode);
-	HAL_GPIO_Init(rpm->port_enc_2, rpm->port_mode);
-}
+//contoh saja
+QEI OMNI_BASE = {
+		.sample_time = 100, .pulse = 0, .pulse_ = 0,
+		.port_A = ENC3_A_GPIO_Port, .port_B = ENC3_B_GPIO_Port,
+		.pin_A = ENC3_A_Pin, .pin_B = ENC3_B_Pin,
+		.ppr = 200, .gear_ratio = 19.2
+};
 
-void INT_RPM(RPM *rpm){
-	rpm->start_time = HAL_GetTick();
-	if((rpm->start_time - rpm->prev_time) >= (rpm->update_s)){
-		rpm->prev_time = rpm->start_time;
-		rpm->RPM = ((rpm->pulse_enc - rpm->pulse_enc_last) * 60.0f * rpm->update_s) / (rpm->ppr * rpm->X * rpm->gear_ratio);
-		rpm->pulse_enc_last = rpm->pulse_enc;
+QEI ENC_EXT_1 = {
+		.sample_time = 100, .pulse = 0, .pulse_ = 0,
+		.port_A = ENC3_A_GPIO_Port, .port_B = ENC3_B_GPIO_Port,
+		.pin_A = ENC3_A_Pin, .pin_B = ENC3_B_Pin,
+		.r = 0.1, .ppr = 360
+};
+
+QEI MEKANISME = {
+		.sample_time = 100, .pulse = 0, .pulse_ = 0,
+		.port_A = ENC3_A_GPIO_Port, .port_B = ENC3_B_GPIO_Port,
+		.pin_A = ENC3_A_Pin, .pin_B = ENC3_B_Pin,
+		.ppr = 14, .gear_ratio = 1320 //(1 : 264 motor mendrive 1 : 5 di mekanisme)
+};
+
+QEI ENC_EXT_TIM_1 = {
+		.sample_time = 100, .pulse = 0, .pulse_ = 0,
+		.tim = &htim5,
+		.r = 0.1, .ppr = 360
+};
+
+void get_RPM(QEI *q){
+	q->start_time = HAL_GetTick();
+	q->dt = q->start_time - q->prev_time;
+	if(q->dt >= q->sample_time){
+		q->RPM = (q->pulse * 60.0f * q->sample_time) / (q->ppr * q->gear_ratio * 2);
+		q->pulse = 0;
+		q->prev_time = q->start_time;
+	}
+}
+void get_RAD_S(QEI *q){
+	q->start_time = HAL_GetTick();
+	q->dt = q->start_time - q->prev_time;
+	if(q->dt >= q->sample_time){
+		q->RPM = (q->pulse * M_TWOPI * q->sample_time) / (q->ppr * q->gear_ratio * 2);
+		q->pulse = 0;
+		q->prev_time = q->start_time;
+	}
+}
+void get_MTR_S(QEI *q){
+	q->start_time = HAL_GetTick();
+	q->dt = q->start_time - q->prev_time;
+	if(q->dt >= q->sample_time){
+		q->RPM = (q->pulse * M_TWOPI * q->r * q->sample_time) / (q->ppr * q->gear_ratio * 2);
+		q->pulse = 0;
+		q->prev_time = q->start_time;
 	}
 }
 
-void INT_RPM2(RPM *rpm){ //no gear_ratio (tidak dicouple gearbox, pulley, sprocket, dll)
-	rpm->start_time = HAL_GetTick();
-	rpm->d_time = rpm->start_time - rpm->prev_time;
-	int t_ = 1000 / rpm->update_s;
-	if(rpm->d_time >= (t_)){
-		rpm->RPM = (rpm->pulse_enc * 60.0f * rpm->update_s) / (rpm->ppr * rpm->X);
-		rpm->pulse_enc = 0;
-		rpm->prev_time = rpm->start_time;
+void get_DEG_S(QEI *q){
+	q->start_time = HAL_GetTick();
+	q->dt = q->start_time - q->prev_time;
+	if(q->dt >= q->sample_time){
+		q->RPM = (q->pulse * 360.0f * q->sample_time) / q->denom;
+		q->pulse = 0;
+		q->prev_time = q->start_time;
 	}
-}
-
-void INT_RPM3(RPM *rpm){ // dicouple gearbox, pulley, sprocket, dll)
-	rpm->start_time = HAL_GetTick();
-	rpm->d_time = rpm->start_time - rpm->prev_time;
-	int t_ = 1000 / rpm->update_s;
-	if(rpm->d_time >= (t_)){
-		rpm->RPM = (rpm->pulse_enc * 60.0f * rpm->update_s) / (rpm->ppr * rpm->X * rpm->gear_ratio);
-		rpm->pulse_enc = 0;
-		rpm->prev_time = rpm->start_time;
-	}
-}
-
-void TIM_RPM(RPM *rpm, TIM_HandleTypeDef *encoder_cnt){
-	rpm->start_time = HAL_GetTick();
-	if((rpm->start_time - rpm->prev_time) >= (1000 / rpm->update_s)){
-		rpm->prev_time = rpm->start_time;
-		rpm->pulse_tim = __HAL_TIM_GET_COUNTER(encoder_cnt);
-		rpm->RPM_U = (rpm->pulse_tim * rpm->update_s * 60) / rpm->ppr * 2;;
-		__HAL_TIM_SET_COUNTER(encoder_cnt, 0);
-	}
-}
-
-void read_pulse(RPM *rpm){
-	if((HAL_GPIO_ReadPin(rpm->port_enc_1, rpm->pin_enc_1)) == GPIO_PIN_RESET){
-		rpm->pulse_enc--;
-		rpm->pulse_dist--;
-	}
-	else if((HAL_GPIO_ReadPin(rpm->port_enc_2, rpm->pin_enc_2)) == GPIO_PIN_RESET){
-		rpm->pulse_enc++;
-		rpm->pulse_dist++;
-	}
-	else __NOP();
-}
-
-void enc_dist(RPM *rpm){
-	rpm->dist = (rpm->pulse_dist * rpm->d_wheel * M_PI) / (rpm->ppr * rpm->X);
-}
-
-void servo_encoding(servo *s, ENCODING X){
-	if(X == X2R)		s->port_mode->Mode = GPIO_MODE_IT_RISING;
-	else if(X == X2F)	s->port_mode->Mode = GPIO_MODE_IT_FALLING;
-	else if(X == X4)	s->port_mode->Mode = GPIO_MODE_IT_RISING_FALLING;
-	else __NOP();
-	HAL_GPIO_Init(s->port_enc_1, s->port_mode);
-	HAL_GPIO_Init(s->port_enc_2, s->port_mode);
-}
-
-void read_servo_pulse(servo *s){
-	if((HAL_GPIO_ReadPin(s->port_enc_1, s->pin_enc_1)) == GPIO_PIN_RESET){
-		s->pulse_enc++;
-
-	}
-	else if ((HAL_GPIO_ReadPin(s->port_enc_2, s->pin_enc_2)) == GPIO_PIN_RESET){
-		s->pulse_enc--;
-	}
-	else __NOP();
 }
 
 /*
@@ -101,18 +81,43 @@ void read_servo_pulse(servo *s){
  * maka .gear_ratio = 264 * 5;
  * note: lebih baik gunakan encoder terpisah (lgsg di mekanisme) utk menghindari backlash
  * jika encoder lgsg di as/shaft mekanisme, gear_ratio ditulis 1
- *
- */
-float get_deg(servo *s){
-	return (s->pulse_enc * 360.0f) / (s->gear_ratio * s->ppr * s->X);
+ * */
+
+void get_DEG(QEI *q){ //untuk mekanisme pan-tilt atau angular spt lengan
+	q->ANG_DEG = (q->pulse_ * 360.0f) / (2 * q->ppr * q->gear_ratio);
 }
 
-void servo_deg_s(servo *s){
-	s->start_time = HAL_GetTick();
-	s->dt = s->start_time - s->prev_time;
-	if(s->dt >= s->sample_time){
-		s->prev_time = s->start_time;
-		s->deg_s =	(s->pulse_enc - s->pulse_enc_) * 360.0f * s->sample_time / (s->ppr * s->X * s->gear_ratio);
-		s->pulse_enc_ = s->pulse_enc;
+void get_RAD(QEI *q){ //untuk mekanisme pan-tilt atau angular spt lengan
+	q->ANG_RAD = (q->pulse_ * M_TWOPI) / (2 * q->ppr * q->gear_ratio);
+}
+
+void get_MTR(QEI *q){ //untuk mencari jarak dari odometry / enc external
+	q->DIST_M = (q->pulse_ * q->r * M_TWOPI) / (2 * q->ppr);
+}
+
+void TIM_RPM(QEI *q){
+	q->start_time = HAL_GetTick();
+	q->dt = q->start_time - q->prev_time;
+	if(q->dt >= q->sample_time){
+		q->RPM = (__HAL_TIM_GET_COUNTER(q->tim) * q->sample_time * 60.0f) / (q->ppr * q->gear_ratio * 2);
+		__HAL_TIM_SET_COUNTER(q->tim, 0);
+		q->prev_time = q->start_time;
+	}
+}
+
+void pin_A(QEI *q){
+	if((HAL_GPIO_ReadPin(q->port_B, q->pin_B)) == GPIO_PIN_RESET){
+		q->pulse++; q->pulse_++;
+	}
+	else{
+		q->pulse--; q->pulse_--;
+	}
+}
+void pin_B(QEI *q){
+	if((HAL_GPIO_ReadPin(q->port_A, q->pin_A)) == GPIO_PIN_RESET){
+		q->pulse--; q->pulse_--;
+	}
+	else{
+		q->pulse++; q->pulse_++;
 	}
 }
