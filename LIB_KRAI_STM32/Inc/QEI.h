@@ -14,105 +14,68 @@
 #include "main.h"
 #include "math.h"
 #include "stdint.h"
+#include "stdlib.h"
 
 /*
  * HOW to interface
  *
- *
- * untuk write pin:
- * setup pin dulu GPIOx dan Pin_Num nya
- * invoke nya:
- * 		write_pin(&struct_nya, state);
- *
- * read RPM untuk fungsi INT_RPM dan INT_RPM2:
- * 	di dalam:
- *
- * 	kalo ga nambah pulse nya, coba tuker pin nya di member struct RPM pin_enc_x dan port_enc_x
- *
+ * 	note : kalo ga nambah pulse nya, coba tuker pin nya di member struct RPM pin_enc_x dan port_enc_x
  *
  *	void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
- *		if(GPIO_Pin == struct_nya.pin_enc_1 || GPIO_Pin == struct_nya.pin_enc_2) read_pulse(&struct_nya);
- *		else __NOP(); //https://stackoverflow.com/questions/24359632/how-does-asmnop-works
+ *		if(GPIO_Pin == OMNI_BASE.pin_A) pin_A(&OMNI_BASE);
+ *		if(GPIO_Pin == OMNI_BASE.pin_B) pin_B(&OMNI_BASE);
+ *		else __NOP();
  *	}
  *
- *	encoding pembacaan encoder ada 2: half-quadrature sma quadrature:
- *	intinya, half-quadrature baca rising/falling pulse dari encoder
- *	klo quadrature rising dan falling
+ *	stlh itu, di loop panggil fungsi baca_rpm()
  *
- *	config nya tgl invoke set_encoding() di main bawahnya *USER CODE BEGIN 2*
- *	yg penting setelah MX_GPIO_INIT();
- *
- *	stlh itu, di loop panggil fungsi baca_rpm() e.g. INT_RPM(), INT_RPM2(), INT_RPM3()
- *	=================================================================================
- *
- *	untuk servo:
- *	buat baca mekanisme kontrol posisi: sudut (angular type e.g. pan/tilt) & jarak (linear type e.g. rack pinion/lead screw)
- *	di callback interrupt:
- *
- *	void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
- *		if(GPIO_Pin == struct.pin_enc_1 || GPIO_Pin == struct.pin_enc_2) read_servo_pulse;
- *		else __NOP(); //satu saja dlm satu callback bersama
- *	}
- *
- *	==================================================================================
- *
- *
- *	KALIBRASI / ESTIMASI TERLEBIH DAHULU SATU PUTARAN BERAPA PPR
- *	MISAL :
- *		ENCODING X4R : 	DUA INTERRUPT A & B RISING
- *						SPEC ENCODER = 7 PPR
- *						1 PUTARAN = 14 PPR, MAKA NILAI ENUM X2R = 2
- *
- *						KALO 1 PUTARAN = 7 PPR, MAKA NILAI ENUM X2R = 1
- *
- *						X2R = X2F
- *						X4R = 2 X X2R
+ * INGAT:
+ *  2pi rad/s  = 1 Hz = 60 rpm
+ *  jika tidak ada gearbox, gear drive, belt drive, chain drive dll, gear_ratio tulis 1 (https://www.youtube.com/watch?app=desktop&v=6irF1P7cCJk)
  * */
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef enum {
-	X2R = 2,
-	X2F = 2,
-	X4 = 4
-}ENCODING;
+typedef struct QEI_Struct {
+	uint32_t start_time, prev_time, sample_time, dt; //dalam ms
+	float pulse; //untuk besaran kecepatan
+	float pulse_; // untuk besaran jarak
+	/*	r = jari-jari roda (untuk odometry)
+	 * 	gear_ratio = motor gearbox, geardrive, beltdrive dll
+	 * */
+	float r, ppr, gear_ratio;
+	float RPM, RAD_S, M_S, DEG_S;
+	float DIST_M, ANG_DEG, ANG_RAD;
+	float denom;
+	//interrupt
+	GPIO_TypeDef *port_A, *port_B;
+	uint16_t pin_A, pin_B;
+	//timer_enc
+	TIM_HandleTypeDef *tim;
+} QEI;
 
-typedef struct RPM_struct {
-	uint32_t start_time, prev_time, update_s, d_time, RPM_U;
-	float pulse_enc, pulse_dist, pulse_tim, pulse_enc_last;
-	float RPM, d_wheel, ppr, dist, gear_ratio;
-	GPIO_TypeDef *port_enc_1, *port_enc_2;
-	GPIO_InitTypeDef *port_mode;
-	uint16_t pin_enc_1, pin_enc_2;
-	ENCODING X;
-} RPM;
+extern QEI OMNI_BASE, EXT_ENC_1, MEKANISME, EXT_ENC_TIM_1; //contoh
+extern TIM_HandleTypeDef htim5;
 
-typedef struct _servo_ {
-	uint32_t start_time, prev_time, sample_time, dt;
-	int pulse_enc, pulse_enc_;
-	float deg_s, ppr, gear_ratio;
-	GPIO_TypeDef *port_enc_1, *port_enc_2;
-	GPIO_InitTypeDef *port_mode;
-	ENCODING X;
-	uint16_t pin_enc_1, pin_enc_2;
-} servo;
+//khusus interrupt taro di callback interrupt
+//rising edge interrupt
+void pin_A(QEI *q);
+void pin_B(QEI *q);
 
-extern RPM w1, w2, RB;
+//loop function
+void get_RPM(QEI *q);
+void get_RAD_S(QEI *q);
+void get_MTR_S(QEI *q);
+void get_DEG_S(QEI *q);
 
-void rpm_encoding(RPM *rpm, ENCODING X);
-void INT_RPM(RPM *rpm);
-void INT_RPM2(RPM *rpm);
-void INT_RPM3(RPM *rpm);
-void TIM_RPM(RPM *rpm, TIM_HandleTypeDef *encoder_cnt);
-void read_pulse(RPM *rpm);
-void enc_dist(RPM *rpm);
+void get_DEG(QEI *q);
+void get_MTR(QEI *q);
+void get_RAD(QEI *q);
 
-void servo_encoding(servo *s, ENCODING X);
-void read_servo_pulse(servo *s);
-void servo_deg_s(servo *s);
-float get_deg(servo *s);
+void TIM_RPM(QEI *q);
 
 #ifdef __cplusplus
 }
