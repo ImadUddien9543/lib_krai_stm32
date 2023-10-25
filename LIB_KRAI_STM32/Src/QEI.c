@@ -39,7 +39,7 @@ void get_RPM(QEI *q){
 	q->start_time = HAL_GetTick();
 	q->dt = q->start_time - q->prev_time;
 	if(q->dt >= q->sample_time){
-		q->RPM = (q->pulse * 60.0f * q->sample_time) / (q->ppr * q->gear_ratio * 2);
+		q->RPM = (q->pulse * 60000.0f) / (q->ppr * q->gear_ratio * 2 * q->dt);
 		q->pulse = 0;
 		q->prev_time = q->start_time;
 	}
@@ -48,7 +48,7 @@ void get_RAD_S(QEI *q){
 	q->start_time = HAL_GetTick();
 	q->dt = q->start_time - q->prev_time;
 	if(q->dt >= q->sample_time){
-		q->RPM = (q->pulse * M_TWOPI * q->sample_time) / (q->ppr * q->gear_ratio * 2);
+		q->RPM = (q->pulse * M_TWOPI) / (q->ppr * q->gear_ratio * 2 * q->dt);
 		q->pulse = 0;
 		q->prev_time = q->start_time;
 	}
@@ -57,7 +57,7 @@ void get_MTR_S(QEI *q){
 	q->start_time = HAL_GetTick();
 	q->dt = q->start_time - q->prev_time;
 	if(q->dt >= q->sample_time){
-		q->RPM = (q->pulse * M_TWOPI * q->r * q->sample_time) / (q->ppr * q->gear_ratio * 2);
+		q->RPM = (q->pulse * M_TWOPI * q->r) / (q->ppr * q->gear_ratio * 2 * q->dt);
 		q->pulse = 0;
 		q->prev_time = q->start_time;
 	}
