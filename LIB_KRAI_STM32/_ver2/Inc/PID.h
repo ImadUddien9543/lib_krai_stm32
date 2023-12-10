@@ -53,4 +53,4 @@ pid_b *init_pid_b(float kp, float ki, float kd, float alpha, float tau, float N,
 }
 #endif
 
-#endif /* INC_POLYNOMIAL_REGRESSION_H_ */
+#endif 
