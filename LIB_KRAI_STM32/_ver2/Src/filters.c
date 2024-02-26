@@ -15,29 +15,29 @@ static void kalman_get_angle(filter *f, float new_angle, float new_angle_rate);
 
 filter *low_pass_init(float alpha, uint32_t ts){
 	filter *obj;
-	obj = malloc(sizeof(*obj));
+	obj = (filter*)malloc(sizeof(obj));
 	obj->alpha = alpha;
 	obj->sample_time = ts;
 	obj->start = obj->last = obj->dt = 0U;
 	obj->out = obj->prev_in = obj->prev_out = 0.0f;
 	obj->get_val = low_pass;
-	return (filter*)obj;
+	return obj;
 }
 
 filter *high_pass_init(float alpha, uint32_t ts){
 	filter *obj;
-	obj = malloc(sizeof(*obj));
+	obj = (filter*)malloc(sizeof(obj));
 	obj->alpha = alpha;
 	obj->sample_time = ts;
 	obj->start = obj->last = obj->dt = 0U;
 	obj->out = obj->prev_in = obj->prev_out = 0.0f;
 	obj->get_val = hi_pass;
-	return (filter*)obj;
+	return obj;
 }
 
 filter *kalman_init(float Q_angle, float Q_bias, float R_measure, uint32_t ts){
 	filter *obj;
-	obj = malloc(sizeof(*obj));
+	obj = (filter*)malloc(sizeof(obj));
 	obj->sample_time = ts;
 	obj->Q_angle = Q_angle;
 	obj->Q_bias = Q_bias;
@@ -48,12 +48,12 @@ filter *kalman_init(float Q_angle, float Q_bias, float R_measure, uint32_t ts){
 	obj->K[0] = obj->K[1] = 0.0f;
 	obj->angle = obj->bias = obj->S = 0.0f;
 	obj->get_kalman = kalman_get_angle;
-	return (filter*)obj;
+	return obj;
 }
 
 filter *alpha_beta_init(float A, float B, uint32_t ts){
 	filter *obj;
-	obj = malloc(sizeof(*obj));
+	obj = (filter*)malloc(sizeof(obj));
 	obj->sample_time = ts;
 	obj->A = A;
 	obj->B = B;
@@ -63,12 +63,12 @@ filter *alpha_beta_init(float A, float B, uint32_t ts){
 	obj->vk[0] = obj->vk[1] = 0.0f;
 	obj->rk[0] = obj->rk[1] = 0.0f;
 	obj->get_alpha_beta = alpha_beta_filter;
-	return (filter*)obj;
+	return obj;
 }
 
 filter *double_exp_init(float a, float b, uint32_t ts){
 	filter *obj;
-	obj = malloc(sizeof(*obj));
+	obj = (filter*)malloc(sizeof(obj));
 	obj->sample_time = ts;
 	obj->a = a;
 	obj->b = b;
@@ -76,7 +76,7 @@ filter *double_exp_init(float a, float b, uint32_t ts){
 	obj->st[0] = obj->st[1] = 0.0f;
 	obj->bt[0] = obj->bt[1] = 0.0f;
 	obj->get_val = double_exp_smoothing;
-	return (filter*)obj;
+	return obj;
 }
 
 static void low_pass(filter *f, float input){
